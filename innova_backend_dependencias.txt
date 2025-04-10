@@ -1,0 +1,36 @@
+
+# INNOVA – Lista completa de dependencias backend
+
+Estas son todas las dependencias que se instalan al ejecutar `npm install` en el backend.
+
+---
+
+## 📦 Dependencias principales
+
+- express → framework para servidor HTTP
+- pg → conexión con PostgreSQL
+- jsonwebtoken → para generar y verificar tokens JWT (login)
+- bcrypt → para encriptar contraseñas de usuarios
+- multer → para subir archivos (comprobantes)
+- cors → para permitir conexión entre backend y frontend
+- dotenv → para manejar variables de entorno desde `.env`
+- pdfkit → para generar PDFs (credenciales)
+- qrcode → para generar imágenes QR en base64
+
+---
+
+## 🛠 Dependencias de desarrollo
+
+- nodemon → reinicia el servidor automáticamente al guardar cambios
+
+---
+
+## 📜 Instalar todo manualmente (si fuera necesario)
+
+```bash
+npm install express pg jsonwebtoken bcrypt multer cors dotenv pdfkit qrcode
+npm install --save-dev nodemon
+```
+
+Esto asegura que tengas todo el entorno backend listo para funcionar.
+
