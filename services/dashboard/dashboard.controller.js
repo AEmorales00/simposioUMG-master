@@ -52,71 +52,88 @@ const downloadDashboardExcel = async (req, res) => {
   }
 };
 
-module.exports = {
-  getDashboardSummary,
-  downloadDashboardExcel
+const exportParticipantsExcel = async (req, res) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const sheet = workbook.addWorksheet('Participantes INNOVA');
+
+    sheet.columns = [
+      { header: 'ID', key: 'id', width: 6 },
+      { header: 'Nombre', key: 'name', width: 30 },
+      { header: 'Tipo', key: 'type', width: 20 },
+      { header: 'Carnet/Institución', key: 'carnet', width: 30 },
+      { header: 'Correo', key: 'email', width: 25 },
+      { header: 'Teléfono', key: 'phone', width: 15 },
+      { header: 'Estado', key: 'status', width: 15 },
+      { header: 'Pago', key: 'payment', width: 15 },
+      { header: 'Check-in', key: 'checkin', width: 10 }
+    ];
+
+    const result = await pool.query(`
+      SELECT p.id, p.name, p.participant_type, p.carnet, p.institution, p.email, p.phone,
+             p.status, p.checked_in, pay.payment_method
+      FROM participants p
+      LEFT JOIN payments pay ON pay.participant_id = p.id
+      ORDER BY p.id ASC
+    `);
+
+    result.rows.forEach((row) => {
+      sheet.addRow({
+        id: row.id,
+        name: row.name,
+        type: row.participant_type,
+        carnet: row.carnet || row.institution || '',
+        email: row.email,
+        phone: row.phone,
+        status: row.status,
+        payment: row.payment_method || '—',
+        checkin: row.checked_in ? '✅' : '❌'
+      });
+    });
+
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="participantes_innova.xlsx"'
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    res.status(500).json({ error: 'Error al generar Excel de participantes' });
+  }
 };
 
-const exportParticipantsExcel = async (req, res) => {
-    try {
-      const workbook = new ExcelJS.Workbook();
-      const sheet = workbook.addWorksheet('Participantes INNOVA');
-  
-      // Encabezados
-      sheet.columns = [
-        { header: 'ID', key: 'id', width: 6 },
-        { header: 'Nombre', key: 'name', width: 30 },
-        { header: 'Tipo', key: 'type', width: 20 },
-        { header: 'Carnet/Institución', key: 'carnet', width: 30 },
-        { header: 'Correo', key: 'email', width: 25 },
-        { header: 'Teléfono', key: 'phone', width: 15 },
-        { header: 'Estado', key: 'status', width: 15 },
-        { header: 'Pago', key: 'payment', width: 15 },
-        { header: 'Check-in', key: 'checkin', width: 10 }
-      ];
-  
-      // Traer participantes + método de pago
-      const result = await pool.query(`
-        SELECT p.id, p.name, p.participant_type, p.carnet, p.institution, p.email, p.phone,
-               p.status, p.checked_in, pay.payment_method
-        FROM participants p
-        LEFT JOIN payments pay ON pay.participant_id = p.id
-        ORDER BY p.id ASC
-      `);
-  
-      result.rows.forEach((row) => {
-        sheet.addRow({
-          id: row.id,
-          name: row.name,
-          type: row.participant_type,
-          carnet: row.carnet || row.institution || '',
-          email: row.email,
-          phone: row.phone,
-          status: row.status,
-          payment: row.payment_method || '—',
-          checkin: row.checked_in ? '✅' : '❌'
-        });
-      });
-  
-      res.setHeader(
-        'Content-Type',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-      );
-      res.setHeader(
-        'Content-Disposition',
-        'attachment; filename="participantes_innova.xlsx"'
-      );
-  
-      await workbook.xlsx.write(res);
-      res.end();
-    } catch (error) {
-      res.status(500).json({ error: 'Error al generar Excel de participantes' });
-    }
-  };
-  
-  module.exports = {
-    getDashboardSummary,
-    downloadDashboardExcel,
-    exportParticipantsExcel // 👈 Asegúrate que esto esté exportado también
-  };
-  
+// ✅ Exportación final correcta
+module.exports = {
+  getDashboardSummary,
+  downloadDashboardExcel,
+  exportParticipantsExcel
+};
+
+
+const getParticipantsList = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT id, name, carnet, email, phone, birth_date, shirt_size, institution,
+             participant_type, registered_by, registered_at, status, checkin_qr, checked_in
+      FROM participants
+      ORDER BY id ASC
+    `);
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error obteniendo participantes:', error);
+    res.status(500).json({ error: 'Error obteniendo participantes' });
+  }
+};
+
+module.exports = {
+  getDashboardSummary,
+  downloadDashboardExcel,
+  exportParticipantsExcel,
+  getParticipantsList, // 👈 también exporta
+};

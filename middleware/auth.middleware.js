@@ -19,3 +19,15 @@ const authMiddleware = (req, res, next) => {
 };
 
 module.exports = authMiddleware;
+
+const requireAdmin = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Acceso denegado. Solo administradores.' });
+  }
+  next();
+};
+
+module.exports = {
+  authMiddleware,
+  requireAdmin
+};
