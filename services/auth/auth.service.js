@@ -14,16 +14,20 @@ const registerUser = async (username, password) => {
 const loginUser = async (username, password) => {
   const result = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
   const user = result.rows[0];
+  console.log('Username recibido:', username);
   console.log('User encontrado en DB:', user);
+  
   if (!user) return null;
 
   const isValid = await bcrypt.compare(password, user.password_hash);
   console.log('Comparación bcrypt:', await bcrypt.compare(password, user.password_hash));
   if (!isValid) return null;
 
-  const token = jwt.sign({ id: user.id, role: user.role }, process.env.JWT_SECRET, {
-    expiresIn: '8h'
-  });
+  const token = jwt.sign(
+    { id: user.id, role: user.role, username: user.username }, // 👈 agrega username aquí
+    process.env.JWT_SECRET,
+    { expiresIn: '8h' }
+  );
 
   return { token, user };
 };

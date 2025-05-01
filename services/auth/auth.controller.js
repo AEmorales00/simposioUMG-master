@@ -7,6 +7,8 @@ const register = async (req, res) => {
 };
 
 const login = async (req, res) => {
+  console.log('Content-Type recibido:', req.headers['content-type']);
+  console.log('Body completo recibido:', req.body);
   const { username, password } = req.body;
   const result = await loginUser(username, password);
   console.log('Username recibido:', username);
