@@ -1,5 +1,9 @@
 const pool = require('../../db/pool');
 const QRCode = require('qrcode');
+const path = require('path');
+const fs = require('fs');
+const { sendEmail } = require('../../utils/email.service');
+const { generatePDF } = require('../../services/certificate/cert.service');
 
 const verifyParticipant = async (participantId, userId, comment) => {
   // 1. Verificar que exista y esté pendiente
@@ -26,6 +30,44 @@ const verifyParticipant = async (participantId, userId, comment) => {
     ) VALUES ($1, $2, $3, $4, $5)
   `, [participantId, 'Pendiente', 'Confirmado', userId, comment]);
 
+  // 5. Crear la carpeta `certificates` si no existe
+  const certificatesDir = path.join(__dirname, '../../certificates');
+  if (!fs.existsSync(certificatesDir)) {
+    fs.mkdirSync(certificatesDir, { recursive: true });
+  }
+
+  // 6. Generar el PDF del certificado y guardarlo
+  const pdfPath = path.join(certificatesDir, `certificate-${participantId}.pdf`);
+  const pdfStream = await generatePDF(participantId);
+  const writeStream = fs.createWriteStream(pdfPath);
+
+  await new Promise((resolve, reject) => {
+    pdfStream.pipe(writeStream);
+    pdfStream.on('end', resolve);
+    pdfStream.on('error', reject);
+  });
+
+  // 7. Enviar correo electrónico con el PDF adjunto
+  const emailContent = `
+    <p>Hola ${participant.name},</p>
+    <p>Tu registro ha sido confirmado exitosamente. Se adjunta tu certificado de participación.</p>
+    <p>Por favor, guarda este correo para futuras referencias.</p>
+  `;
+
+  await sendEmail({
+    to: participant.email,
+    subject: 'Confirmación de Registro - INNOVA',
+    html: emailContent,
+    attachments: [
+      {
+        filename: `Certificado-${participantId}.pdf`,
+        path: pdfPath, // Ruta al archivo PDF generado
+        contentType: 'application/pdf'
+      }
+    ]
+  });
+
+  console.log('✅ Correo enviado correctamente con el PDF adjunto');
   return qrCode;
 };
 
