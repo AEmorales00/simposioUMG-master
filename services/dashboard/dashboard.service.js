@@ -46,7 +46,27 @@ const getSummary = async () => {
   return result;
 };
 
-module.exports = { getSummary };
+const searchParticipants = async (query) => {
+  try {
+    const results = await pool.query(
+      `
+      SELECT id, name, carnet, email, phone, participant_type
+      FROM participants
+      WHERE LOWER(name) LIKE LOWER($1)
+         OR LOWER(carnet) LIKE LOWER($1)
+         OR LOWER(email) LIKE LOWER($1)
+      `,
+      [`%${query}%`] // Busca coincidencias parciales
+    );
+
+    return results.rows; // Devuelve los resultados como un array
+  } catch (error) {
+    console.error('Error al realizar la búsqueda:', error);
+    throw new Error('Error al realizar la búsqueda');
+  }
+};
+
+module.exports = { getSummary, searchParticipants };
 
 const express = require('express');
 const path = require('path');
@@ -65,4 +85,4 @@ router.get('/comprobante/:filename', (req, res) => {
   });
 });
 
-module.exports = router;
+module.exports = { getSummary, searchParticipants };

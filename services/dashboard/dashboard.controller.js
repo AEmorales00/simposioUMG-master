@@ -1,4 +1,4 @@
-const { getSummary } = require('./dashboard.service');
+const { getSummary, searchParticipants } = require('./dashboard.service');
 const ExcelJS = require('exceljs');
 const pool = require('../../db/pool');
 
