@@ -31,6 +31,13 @@ const getSummary = async () => {
   `);
   result.payments_breakdown = por_tipo.rows;
 
+  // Participantes con comprobantes
+  const participantes = await pool.query(`
+    SELECT id, name, email, comprobante
+    FROM participants
+  `);
+  result.participants = participantes.rows;
+
   // Porcentaje de asistencia
   result.attendance_percent = result.confirmed > 0
     ? ((result.checked_in / result.confirmed) * 100).toFixed(1)
@@ -40,3 +47,22 @@ const getSummary = async () => {
 };
 
 module.exports = { getSummary };
+
+const express = require('express');
+const path = require('path');
+const router = express.Router();
+
+// Endpoint para obtener el comprobante de pago
+router.get('/comprobante/:filename', (req, res) => {
+  const { filename } = req.params;
+  const filePath = path.join(__dirname, '../../uploads', filename);
+
+  res.sendFile(filePath, (err) => {
+    if (err) {
+      console.error('Error al enviar el archivo:', err);
+      res.status(404).send('Archivo no encontrado');
+    }
+  });
+});
+
+module.exports = router;
