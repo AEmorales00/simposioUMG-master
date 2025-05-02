@@ -1,22 +1,32 @@
-const { createParticipantInternal } = require('./admin.service');
+const fs = require('fs');
+const path = require('path');
+const { insertParticipantOnly, insertPaymentWithUrl, insertPaymentVerification } = require('./admin.service');
 
 const registerPrivate = async (req, res) => {
   try {
-    console.log('BODY:', req.body);
-    console.log('FILE:', req.file);
-    console.log('USER:', req.user);
+    if (!req.file) return res.status(400).json({ error: 'Comprobante requerido' });
 
-    const userId = req.user.id;
-    const username = req.user.username;
-    const fileUrl = req.file?.path;
+    const { id: userId, username } = req.user;
+    const ext = path.extname(req.file.originalname);
+    const tempPath = req.file.path;
 
-    if (!fileUrl) return res.status(400).json({ error: 'Comprobante requerido' });
+    // 1. Insertar participante
+    const participantId = await insertParticipantOnly(req.body, userId);
 
-    const id = await createParticipantInternal(req.body, fileUrl, userId, username);
+    // 2. Renombrar archivo con ID del participante
+    const finalName = `comprobante_${participantId}${ext}`;
+    const finalPath = path.join('uploads', finalName);
+    fs.renameSync(tempPath, finalPath);
 
-    res.json({ message: 'Registro privado exitoso', participant_id: id });
+    // 3. Insertar pago con ruta final
+    await insertPaymentWithUrl(participantId, req.body.payment_method, finalPath, userId);
+
+    // 4. Insertar verificación de pago
+    await insertPaymentVerification(participantId, userId, username);
+
+    res.json({ message: 'Registro privado exitoso', participant_id: participantId });
   } catch (err) {
-    console.error('❌ ERROR en registerPrivate:', err); 
+    console.error('❌ ERROR en registerPrivate:', err);
     res.status(500).json({ error: err.message });
   }
 };
