@@ -3,45 +3,67 @@ const pool = require('../../db/pool');
 const getSummary = async () => {
   const result = {};
 
-  // Total de participantes
-  const total = await pool.query('SELECT COUNT(*) FROM participants');
-  result.total_participants = parseInt(total.rows[0].count);
+  // 1. 👥 Total de participantes registrados
+  const totalParticipants = await pool.query('SELECT COUNT(*) FROM participants');
+  result.total_participants = parseInt(totalParticipants.rows[0].count);
 
-  // Confirmados
-  const confirmados = await pool.query(`SELECT COUNT(*) FROM participants WHERE status = 'Confirmado'`);
-  result.confirmed = parseInt(confirmados.rows[0].count);
+  // 2. 🎓 Participantes por tipo
+  const participantsByType = await pool.query(`
+    SELECT participant_type, COUNT(*)::int AS total
+    FROM participants
+    GROUP BY participant_type
+  `);
+  result.participants_by_type = participantsByType.rows;
 
-  // Pendientes
-  const pendientes = await pool.query(`SELECT COUNT(*) FROM participants WHERE status = 'Pendiente'`);
-  result.pending = parseInt(pendientes.rows[0].count);
+  // 3. 💳 Participantes que han pagado
+  const participantsPaid = await pool.query(`
+    SELECT COUNT(DISTINCT participant_id) AS total
+    FROM payments
+  `);
+  result.participants_paid = parseInt(participantsPaid.rows[0].total);
 
-  // Check-in hechos
-  const checkins = await pool.query(`SELECT COUNT(*) FROM participants WHERE checked_in = true`);
-  result.checked_in = parseInt(checkins.rows[0].count);
+  // 4. ⏱ Pagos sin verificar
+  const unverifiedPayments = await pool.query(`
+    SELECT COUNT(*) AS total
+    FROM payments p
+    LEFT JOIN payment_verifications pv ON p.participant_id = pv.participant_id
+    WHERE pv.participant_id IS NULL
+  `);
+  result.unverified_payments = parseInt(unverifiedPayments.rows[0].total);
 
-  // Total recaudado (simulado: supón que cada inscripción = Q50)
-  const pagos = await pool.query(`SELECT COUNT(*) FROM payments`);
-  result.total_collected = parseInt(pagos.rows[0].count) * 50;
+  // 5. 📍 Participantes con check-in realizado
+  const participantsCheckedIn = await pool.query(`
+    SELECT COUNT(*) AS total
+    FROM participants
+    WHERE checked_in = true
+  `);
+  result.participants_checked_in = parseInt(participantsCheckedIn.rows[0].total);
 
-  // Pagos por tipo
-  const por_tipo = await pool.query(`
+  // 6. ❌ Pagaron pero no asistieron
+  const paidButNotCheckedIn = await pool.query(`
+    SELECT COUNT(*) AS total
+    FROM participants p
+    INNER JOIN payments pay ON p.id = pay.participant_id
+    WHERE p.checked_in = false
+  `);
+  result.paid_but_not_checked_in = parseInt(paidButNotCheckedIn.rows[0].total);
+
+  // 7. 👤 Participantes registrados por usuario
+  const participantsByUser = await pool.query(`
+    SELECT u.username, COUNT(p.id)::int AS total
+    FROM participants p
+    INNER JOIN users u ON p.registered_by = u.id
+    GROUP BY u.username
+  `);
+  result.participants_by_user = participantsByUser.rows;
+
+  // 8. 💵 Pagos por método
+  const paymentsByMethod = await pool.query(`
     SELECT payment_method, COUNT(*)::int AS total
     FROM payments
     GROUP BY payment_method
   `);
-  result.payments_breakdown = por_tipo.rows;
-
-  // Participantes con comprobantes
-  const participantes = await pool.query(`
-    SELECT id, name, email, comprobante
-    FROM participants
-  `);
-  result.participants = participantes.rows;
-
-  // Porcentaje de asistencia
-  result.attendance_percent = result.confirmed > 0
-    ? ((result.checked_in / result.confirmed) * 100).toFixed(1)
-    : '0.0';
+  result.payments_by_method = paymentsByMethod.rows;
 
   return result;
 };
