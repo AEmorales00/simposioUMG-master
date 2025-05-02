@@ -1,3 +1,5 @@
+const pool = require('../../db/pool');
+const { generateFancyCertificate } = require('./htmlCertificate.service');
 const { generatePDF } = require('./cert.service');
 
 const generateParticipantPDF = async (req, res) => {
@@ -14,4 +16,18 @@ const generateParticipantPDF = async (req, res) => {
   }
 };
 
-module.exports = { generateParticipantPDF };
+const generateHTMLCertificate = async (req, res) => {
+  const { id } = req.params;
+  const result = await pool.query('SELECT name FROM participants WHERE id = $1', [id]);
+  const participant = result.rows[0];
+
+  if (!participant) return res.status(404).json({ error: 'Participante no encontrado' });
+
+  const pdfPath = await generateFancyCertificate(participant.name, id);
+  res.download(pdfPath);
+};
+
+module.exports = {
+  generateHTMLCertificate,
+  generateParticipantPDF
+};
