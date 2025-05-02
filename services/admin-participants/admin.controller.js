@@ -1,6 +1,11 @@
 const fs = require('fs');
 const path = require('path');
-const { insertParticipantOnly, insertPaymentWithUrl, insertPaymentVerification } = require('./admin.service');
+const {
+  insertParticipantOnly,
+  insertPaymentWithUrl,
+  insertPaymentVerification,
+  deleteParticipantById
+} = require('./admin.service');
 
 const registerPrivate = async (req, res) => {
   try {
@@ -31,4 +36,20 @@ const registerPrivate = async (req, res) => {
   }
 };
 
-module.exports = { registerPrivate };
+const deleteParticipant = async (req, res) => {
+  try {
+    const participantId = parseInt(req.params.id, 10);
+    if (isNaN(participantId)) return res.status(400).json({ error: 'ID inválido' });
+
+    await deleteParticipantById(participantId);
+    res.json({ message: 'Participante eliminado correctamente' });
+  } catch (err) {
+    console.error('❌ ERROR al eliminar participante:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+module.exports = {
+  registerPrivate,
+  deleteParticipant
+};

@@ -59,8 +59,15 @@ const insertPaymentVerification = async (participantId, userId, username) => {
   );
 };
 
+const deleteParticipantById = async (participantId) => {
+  await pool.query(`DELETE FROM payment_verifications WHERE participant_id = $1`, [participantId]);
+  await pool.query(`DELETE FROM payments WHERE participant_id = $1`, [participantId]);
+  await pool.query(`DELETE FROM participants WHERE id = $1`, [participantId]);
+};
+
 module.exports = {
   insertParticipantOnly,
   insertPaymentWithUrl,
-  insertPaymentVerification
+  insertPaymentVerification,
+  deleteParticipantById
 };
