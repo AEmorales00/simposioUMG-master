@@ -1,5 +1,4 @@
 const pool = require('../../db/pool');
-const { checkInAndSendCertificate } = require('../certificate/checkin-certificate.service');
 
 const checkInByQR = async (qrCode, userId) => {
   // Busca al participante por el código QR
@@ -16,10 +15,8 @@ const checkInByQR = async (qrCode, userId) => {
   console.log('Estado de checked_in:', participant.checked_in);
 
   if (participant.checked_in) {
-    console.log('El participante ya hizo check-in, pero se enviará el certificado nuevamente.');
-    // Generar y enviar el certificado aunque ya haya hecho check-in
-    await checkInAndSendCertificate(participant.id);
-    return participant; // Retorna el participante sin actualizar el estado
+    console.log('El participante ya hizo check-in.');
+    return participant; // Retorna el participante sin intentar generar el certificado
   }
 
   // Actualiza el estado del participante a "checked_in"
@@ -31,10 +28,8 @@ const checkInByQR = async (qrCode, userId) => {
     [participant.id]
   );
 
-  // Generar y enviar el certificado
-  await checkInAndSendCertificate(participant.id);
-
-  return updated.rows[0];
+  console.log('Check-in registrado para el participante:', updated.rows[0]);
+  return updated.rows[0]; // Retorna el participante actualizado
 };
 
 module.exports = { checkInByQR };
