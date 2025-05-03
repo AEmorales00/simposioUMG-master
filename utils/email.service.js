@@ -23,11 +23,11 @@ const sendEmail = async ({ to, subject, text, attachments = [] }) => {
   }
 
   const mailOptions = {
-    from: '"Innova Simposio 2025" <luismiguelchox@gmail.com>',
+    from: '"Innova Simposio 2025" luismiguelchox@gmail.com',
     to,
     subject,
     text,
-    html, // ✅ ahora sí permite HTML
+    html,
     attachments
   };
 
