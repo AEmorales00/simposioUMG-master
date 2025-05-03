@@ -50,8 +50,8 @@ const verifyParticipant = async (participantId, userId, comment) => {
   // 7. Enviar correo electrónico con el PDF adjunto
   const emailContent = `
     <p>Hola ${participant.name},</p>
-    <p>Tu registro ha sido confirmado exitosamente. Se adjunta tu certificado de participación.</p>
-    <p>Por favor, guarda este correo para futuras referencias.</p>
+    <p>Tu registro ha sido confirmado exitosamente. Adjunto encontraras el QR de participacion.</p>
+    <p>Por favor, guarda este correo ya que es el boleto de entrada.</p>
   `;
 
   await sendEmail({

@@ -22,7 +22,7 @@
     "nodemailer": "^6.10.1",
     "pdfkit": "^0.16.0",
     "pg": "^8.14.1",
-    "puppeteer": "^24.7.2",
+    "puppeteer": "^24.8.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {
